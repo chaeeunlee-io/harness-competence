@@ -175,3 +175,18 @@ Training and held-out harnesses:
 | AppWorld | `code`, `fc`, `miniswe` | `xml` |
 
 Rewards come directly from each benchmark's verifier, with no shaping for trajectory length, number of turns, or termination. MedAgentBench, BFCL, and AppWorld use binary rewards. Reasoning Gym uses scores in `[0,1]`.
+
+<!--
+## Citation
+
+The paper is not on arXiv yet. A BibTeX entry will be added here once it is.
+
+```
+Bib entry
+```
+
+## Contact
+If you have any questions, do not hesitate to contact us ...
+
+## Acknowledgments
+-->

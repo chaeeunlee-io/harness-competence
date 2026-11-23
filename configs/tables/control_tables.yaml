@@ -1,0 +1,273 @@
+# Control and GRPO tables: `exp control-tables` (exp/controltables.py).
+# Job references as in seed_tables.yaml ("root:relative/path"). Reference rows (task supervision
+# only, rehearsal only, combined) are the runs at the trainers' default seed, the seed every control
+# arm here was trained with, so each table compares like with like. Where a column's controls also have
+# seeds 2 and 3 (Reasoning Gym in Tables B and E), its reference rows pool the same seeds (the default-seed run, s2, s3).
+# The three-seed means of the reference arms (s1-s3) are in the seed tables (Table A).
+
+roots:
+  evals: runs/evals
+  repo: .
+
+external: external_cells.csv
+unscored_flag: 0.03
+
+tables:
+  # ------------------------------------------------------------------ B: size- and budget-matched
+  - id: B
+    title: "Size- and budget-matched 2×2: target-harness success (%)"
+    post_title: "Size- and budget-matched 2×2: target-harness score (%)"
+    caption: "One run per cell at the trainers' default seed, 4 attempts × all tasks. RG cells pool the default seed with seeds 2–3 (task only, repeated: with seeds 2–5). MAB rehearsal-only: seed 1."
+    note: >-
+      Every run: 4 attempts per task, default seed unless more seeds are listed. On Reasoning Gym the reference rows pool the
+      default seed with seeds 2 and 3, the seeds of the shrunk arms. MAB rehearsal-only has no default-seed run; its seed-1
+      run stands in.
+    optional: true
+    columns:
+      - {id: bfcl, label: "BFCL-MT (fc)", benchmark: bfcl_multiturn,
+         vars: {B: bfcl_multiturn, tier: "", h: fc, task: json+pycall, reh: reh-fc, comb: json+pycall+reh-fc,
+                shrunk: json+pycall+reh-fc~rows802, mix: json+pycall+reh-fc~rows802mix,
+                taskrep: json+pycall~rows1070rep, rehrep: reh-fc~rows1070rep}}
+      - {id: mab, label: "MAB (Terminus-2)", benchmark: medagentbench,
+         vars: {B: medagentbench, tier: "", h: t2, task: parity+fc, reh: reh-t2, comb: parity+fc+reh-t2,
+                shrunk: parity+fc+reh-t2~rows258, mix: parity+fc+reh-t2~rows258mix,
+                taskrep: parity+fc~rows365rep, rehrep: reh-t2~rows365rep}}
+      - {id: rge, label: "RG easy (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-easy", h: t2, task: miniswe+goose, reh: reh-t2, comb: miniswe+goose+reh-t2,
+                shrunk: miniswe+goose+reh-t2~rows269, mix: miniswe+goose+reh-t2~rows269mix,
+                taskrep: miniswe+goose~rows389rep, rehrep: reh-t2~rows389rep}}
+      - {id: rgh, label: "RG hard (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-hard", h: t2, task: miniswe+goose, reh: reh-t2, comb: miniswe+goose+reh-t2,
+                shrunk: miniswe+goose+reh-t2~rows269, mix: miniswe+goose+reh-t2~rows269mix,
+                taskrep: miniswe+goose~rows389rep, rehrep: reh-t2~rows389rep}}
+    rows:
+      - {id: task, label: "Task supervision only (same seed)", runs: {s0b: "evals:{B}{tier}/qwen3-4b/{task}/s0b/{h}/n4"},
+         cells: {rge: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s3/t2/n4"}, rgh: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s3/t2/n4"}}}
+      - {id: reh, label: "Rehearsal only (same seed)", runs: {s0b: "evals:{B}{tier}/qwen3-4b/{reh}/s0b/{h}/n4"},
+         cells: {mab: {s1: "evals:medagentbench/qwen3-4b/reh-t2/s1/t2/n4"}, rge: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s3/t2/n4"}, rgh: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/reh-t2/s3/t2/n4"}}}
+      - {id: comb, label: "Task supervision + rehearsal (same seed)", bold: true,
+         runs: {s0b: "evals:{B}{tier}/qwen3-4b/{comb}/s0b/{h}/n4"},
+         cells: {rge: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s3/t2/n4"}, rgh: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s3/t2/n4"}}}
+      - {id: shrunk, label: "Combined, shrunk to task size, all rehearsal rows kept",
+         runs: {s0: "evals:{B}{tier}/qwen3-4b/{shrunk}/s0/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{shrunk}/s2/{h}/n4",
+                s3: "evals:{B}{tier}/qwen3-4b/{shrunk}/s3/{h}/n4"}}
+      - {id: mix, label: "Combined, shrunk to task size, same mixture",
+         runs: {s0: "evals:{B}{tier}/qwen3-4b/{mix}/s0/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{mix}/s2/{h}/n4",
+                s3: "evals:{B}{tier}/qwen3-4b/{mix}/s3/{h}/n4"}}
+      - {id: taskrep, label: "Task only, repeated to combined size",
+         runs: {s0: "evals:{B}{tier}/qwen3-4b/{taskrep}/s0/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{taskrep}/s2/{h}/n4",
+                s3: "evals:{B}{tier}/qwen3-4b/{taskrep}/s3/{h}/n4", s4: "evals:{B}{tier}/qwen3-4b/{taskrep}/s4/{h}/n4",
+                s5: "evals:{B}{tier}/qwen3-4b/{taskrep}/s5/{h}/n4"}}
+      - {id: rehrep, label: "Rehearsal only, repeated to combined size", post: false,
+         runs: {s0: "evals:{B}{tier}/qwen3-4b/{rehrep}/s0/{h}/n4"}}
+
+  # ------------------------------------------------------------------ D: non-target rehearsal
+  - id: D
+    title: "Rehearsal through a non-target harness: target-harness success (%)"
+    post_title: "Rehearsal through a non-target harness: target-harness success (%)"
+    caption: "One run per cell at the default seed, 4 attempts × all tasks. Non-target rehearsal: json on BFCL-MT (232 rows), fc on MAB (107 rows, the target rehearsal's size)."
+    note: "Every run: 4 attempts per task, default seed. Non-target rehearsal: json on BFCL-MT (232 rows), fc on MAB (107 rows, the target rehearsal's size)."
+    columns:
+      - {id: bfcl, label: "BFCL-MT, target fc", benchmark: bfcl_multiturn,
+         vars: {B: bfcl_multiturn, h: fc, task: json+pycall, comb: json+pycall+reh-fc, other: json+pycall+reh-json}}
+      - {id: mab, label: "MAB, target Terminus-2", benchmark: medagentbench,
+         vars: {B: medagentbench, h: t2, task: parity+fc, comb: parity+fc+reh-t2, other: parity+fc+reh-fc~rows365}}
+    rows:
+      - {id: task, label: Task supervision only (same seed), runs: {s0b: "evals:{B}/qwen3-4b/{task}/s0b/{h}/n4"}}
+      - {id: comb, label: Task supervision + target-harness rehearsal (same seed), bold: true, runs: {s0b: "evals:{B}/qwen3-4b/{comb}/s0b/{h}/n4"}}
+      - {id: other, label: Task supervision + the same amount of rehearsal through a non-target training harness,
+         runs: {s0: "evals:{B}/qwen3-4b/{other}/s0/{h}/n4"}}
+
+  # ------------------------------------------------------------------ E: failed rehearsal
+  - id: E
+    title: "Failed-rehearsal control: target-harness success (%)"
+    post_title: "Failed-rehearsal control: target-harness score (%)"
+    caption: "One run per cell at the default seed, 4 attempts × all tasks; RG cells pool the default seed with seeds 2–3. BFCL-MT: 38 failed vs 38 successful rehearsal traces. Share kept = (failed − task) / (successful − task)."
+    note: >-
+      Every run: 4 attempts per task, default seed unless more seeds are listed; on Reasoning Gym all three rows pool the
+      default seed with seeds 2 and 3. BFCL-MT compares 38 failed with 38
+      successful rehearsal traces (a matched pool). "Share of the gain kept" = (failed − task only) / (successful − task only),
+      from the cell means above it.
+    optional: true
+    columns:
+      - {id: bfcl, label: "BFCL-MT (fc)", benchmark: bfcl_multiturn,
+         vars: {B: bfcl_multiturn, tier: "", h: fc, task: json+pycall, comb: json+pycall+reh-fc~likefail, comb_run: s0, fail: json+pycall+reh-fc~fail}}
+      - {id: rge, label: "RG easy (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-easy", h: t2, task: miniswe+goose, comb: miniswe+goose+reh-t2, comb_run: s0b, fail: miniswe+goose+reh-t2~fail}}
+      - {id: rgh, label: "RG hard (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-hard", h: t2, task: miniswe+goose, comb: miniswe+goose+reh-t2, comb_run: s0b, fail: miniswe+goose+reh-t2~fail}}
+      - {id: mab, label: "MAB (Terminus-2)", benchmark: medagentbench,
+         vars: {B: medagentbench, tier: "", h: t2, task: parity+fc, comb: parity+fc+reh-t2, comb_run: s0b, fail: parity+fc+reh-t2~fail}}
+    rows:
+      - {id: task, label: Task supervision only (same seed), runs: {s0b: "evals:{B}{tier}/qwen3-4b/{task}/s0b/{h}/n4"},
+         cells: {rge: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s3/t2/n4"}, rgh: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose/s3/t2/n4"}}}
+      - {id: comb, label: "Task + rehearsal (verifier-passing traces, same seed)", runs: {"{comb_run}": "evals:{B}{tier}/qwen3-4b/{comb}/{comb_run}/{h}/n4"},
+         cells: {rge: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s3/t2/n4"}, rgh: {s0b: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4", s2: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s2/t2/n4", s3: "evals:reasoning_gym{tier}/qwen3-4b/miniswe+goose+reh-t2/s3/t2/n4"}}}
+      - {id: fail, label: "Task + rehearsal (verifier-failing traces)", bold: true,
+         runs: {s0: "evals:{B}{tier}/qwen3-4b/{fail}/s0/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{fail}/s2/{h}/n4",
+                s3: "evals:{B}{tier}/qwen3-4b/{fail}/s3/{h}/n4"}}
+      - {id: share, label: "Share of the gain kept (derived)", derived: "(fail - task) / (comb - task)", format: pct}
+
+  # ------------------------------------------------------------------ F: what is in the failed traces
+  - id: F
+    kind: pools
+    title: "Rehearsal traces, failed / successful (exp/poolstats.py)"
+    post_title: "Rehearsal traces, failed / successful"
+    caption: "Per trace in the rehearsal pools. A turn is invalid when the harness rejected it (Terminus-2: a parse error; fc: an unparsed call or an empty reply, including unclosed reasoning)."
+    note: >-
+      Per trace (pool row). A turn is invalid when the harness rejected it: Terminus-2 answered "Previous response had
+      parsing errors"; fc: a tool call that did not parse, or an empty reply after the reasoning (including a reasoning block
+      that never closes, which the served reasoning parser reads as having no action). BFCL-MT compares the
+      38 failed traces with the 38-trace successful pool of the same size (reh-fc~likefail).
+    pool_order: [failed, successful]
+    columns:
+      - {id: bfcl, label: "BFCL-MT (fc)", format: fc,
+         pools: {failed: "repo:runs/pools/bfcl_multiturn/reh-fc~fail.jsonl", successful: "repo:runs/pools/bfcl_multiturn/reh-fc~likefail.jsonl"}}
+      - {id: rg, label: "RG (Terminus-2)", format: terminus,
+         pools: {failed: "repo:runs/pools/reasoning_gym/reh-t2~fail.jsonl", successful: "repo:benchmarks/reasoning_gym/pools/reh-t2.jsonl"}}
+      - {id: mab, label: "MAB (Terminus-2)", format: terminus,
+         pools: {failed: "repo:benchmarks/medagentbench/pools/reh-t2~fail.jsonl", successful: "repo:benchmarks/medagentbench/pools/reh-t2.jsonl"}}
+
+  # ------------------------------------------------------------------ G: clean demonstrator
+  - id: G
+    title: "Clean demonstrator (Qwen3-32B, never saw target-harness solutions): target-harness success (%)"
+    post_title: "Clean demonstrator (Qwen3-32B base, never trained with target-harness solutions): target-harness score (%)"
+    caption: "One run per cell at the default seed, 4 attempts × all tasks (MAB rehearsal-only with the 3H demonstrator: seed 1). Last column: the s0 run of the same MAB arm."
+    note: >-
+      Every run: 4 attempts per task, default seed (MAB rehearsal-only with the 3H demonstrator: seed 1, no default-seed
+      run). Last column: the s0 run of the same MAB arm (same 365-row pool).
+    columns:
+      - {id: reh3h, label: "Rehearsal only, 3H demonstrator", vars: {arm: "{reh}", run: s0b}}
+      - {id: reh32, label: "Rehearsal only, clean (32B) demonstrator", vars: {arm: "{reh32}", run: s0}}
+      - {id: comb3h, label: "Task + rehearsal, 3H demonstrator", vars: {arm: "{comb}", run: s0b}}
+      - {id: comb32, label: "**Task + rehearsal, clean demonstrator**", vars: {arm: "{comb32}", run: "{comb32_run}"}}
+      - {id: comb32p, label: "Task + rehearsal, clean demonstrator: s0"}
+    runs: {"{run}": "evals:{B}{tier}/qwen3-4b/{arm}/{run}/{h}/n4"}
+    rows:
+      - {id: bfcl, label: "BFCL-MT (fc)", benchmark: bfcl_multiturn,
+         vars: {B: bfcl_multiturn, tier: "", h: fc, reh: reh-fc, reh32: reh-fc~32b, comb: json+pycall+reh-fc, comb32: json+pycall+reh-fc~32b, comb32_run: s0},
+         cells: {comb32p: none}}
+      - {id: mab, label: "MAB (Terminus-2)", benchmark: medagentbench,
+         vars: {B: medagentbench, tier: "", h: t2, reh: reh-t2, reh32: reh-t2~32b, comb: parity+fc+reh-t2, comb32: parity+fc+reh-t2~32b, comb32_run: s0b},
+         cells: {reh3h: {s1: "evals:medagentbench/qwen3-4b/reh-t2/s1/t2/n4"},
+                 comb32p: {s0: "evals:medagentbench/qwen3-4b/parity+fc+reh-t2~32b/s0/t2/n4"}}}
+      - {id: rge, label: "RG easy (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-easy", h: t2, reh: reh-t2, reh32: reh-t2~32b, comb: miniswe+goose+reh-t2, comb32: miniswe+goose+reh-t2~32b, comb32_run: s0},
+         cells: {comb32p: none}}
+      - {id: rgh, label: "RG hard (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-hard", h: t2, reh: reh-t2, reh32: reh-t2~32b, comb: miniswe+goose+reh-t2, comb32: miniswe+goose+reh-t2~32b, comb32_run: s0},
+         cells: {comb32p: none}}
+
+  # ------------------------------------------------------------------ H: leakage (MAB templates)
+  - id: H
+    title: "Leakage analysis on MedAgentBench: success (%) on rehearsed vs never-rehearsed templates"
+    post_title: "Leakage analysis on MedAgentBench: success (%) on rehearsed vs never-rehearsed templates"
+    caption: "Seeds 1–3 per row, each 4 attempts × 61 tasks; the columns split the test tasks into the 4 rehearsed and 6 never-rehearsed templates."
+    note: >-
+      Rehearsal was built from templates task2, task3, task4 and task8; the other six test templates were never
+      rehearsed. Seeds 1 / 2 / 3 of the 2×2 (Table A), 4 attempts per task; each cell keeps only that column's tasks.
+    benchmark: medagentbench
+    columns:
+      - {id: reh_t, label: "Rehearsed templates (task2/3/4/8)", tasks_re: '^task(2|3|4|8)_'}
+      - {id: never_t, label: "Never-rehearsed templates (task1/5/6/7/9/10)", tasks_re: '^task(1|5|6|7|9|10)_'}
+    rows:
+      - {id: task, label: "Task supervision only", vars: {arm: parity+fc},
+         runs: {s1: "evals:medagentbench/qwen3-4b/{arm}/s1/t2/n4", s2: "evals:medagentbench/qwen3-4b/{arm}/s2/t2/n4",
+                s3: "evals:medagentbench/qwen3-4b/{arm}/s3/t2/n4"}}
+      - {id: comb, label: "**Task supervision + rehearsal**", vars: {arm: parity+fc+reh-t2},
+         runs: {s1: "evals:medagentbench/qwen3-4b/{arm}/s1/t2/n4", s2: "evals:medagentbench/qwen3-4b/{arm}/s2/t2/n4",
+                s3: "evals:medagentbench/qwen3-4b/{arm}/s3/t2/n4"}}
+      - {id: gain, label: "Gain of the combined arm (derived)", derived: "comb - task", format: pts}
+
+  # ------------------------------------------------------------------ I: headroom (s0 runs)
+  - id: I
+    title: "Headroom left by rehearsal alone: target-harness success (%), s0 runs"
+    post_title: "Rehearsal alone against fully trained models: target-harness score (%), s0 runs"
+    caption: "The s0 runs, 4 attempts per task. The two right-hand columns are computed from the others."
+    note: >-
+      The s0 runs, 4 attempts per task (BFCL-MT: the reported values, †). "Specialist" = trained on full
+      demonstrations through the target harness; 3H SFT = trained on all three training harnesses. Ratio columns are
+      computed from the cells to their left.
+    columns:
+      - {id: reh, label: Rehearsal only}
+      - {id: comb, label: Task + rehearsal}
+      - {id: spec, label: Specialist}
+      - {id: sft3h, label: 3H SFT}
+      - {id: r_spec, label: "Rehearsal / specialist", derived: "reh / spec", format: pct}
+      - {id: r_3h, label: "Rehearsal / 3H SFT", derived: "reh / sft3h", format: pct}
+    rows:
+      - {id: bfcl, label: "BFCL-MT, fc", benchmark: bfcl_multiturn,
+         cells: {reh: {s0: ext}, comb: {s0: ext}, spec: {s0: ext}, sft3h: {s0: ext}}}
+      - {id: rge, label: "RG easy, Terminus-2", benchmark: reasoning_gym,
+         cells: {reh: {s0: "evals:reasoning_gym-easy/qwen3-4b/reh-t2/s0/t2/n4"}, comb: {s0: "evals:reasoning_gym-easy/qwen3-4b/miniswe+goose+reh-t2/s0/t2/n4"},
+                 spec: {s0: "evals:reasoning_gym-easy/qwen3-4b/t2-only/s0/t2/n4"}, sft3h: {s0: "evals:reasoning_gym-easy/qwen3-4b/3h/s0/t2/n4"}}}
+      - {id: mab_t2, label: "MAB, Terminus-2", benchmark: medagentbench,
+         cells: {reh: {s0: "evals:medagentbench/qwen3-4b/reh-t2/s0/t2/n4"}, comb: {s0: "evals:medagentbench/qwen3-4b/parity+fc+reh-t2/s0/t2/n4"},
+                 spec: {s0: "evals:medagentbench/qwen3-4b/t2-only/s0/t2/n4"}, sft3h: {s0: "evals:medagentbench/qwen3-4b/3h/s0/t2/n4"}}}
+      - {id: mab_fc, label: "**MAB, fc**", benchmark: medagentbench,
+         cells: {reh: {s0: "evals:medagentbench/qwen3-4b/reh-fc/s0/fc/n4"}, comb: {s0: "evals:medagentbench/qwen3-4b/parity+t2+reh-fc/s0/fc/n4"},
+                 spec: {s0: "evals:medagentbench/qwen3-4b/fc-only/s0/fc/n4"}, sft3h: {s0: "evals:medagentbench/qwen3-4b/3h/s0/fc/n4"}}}
+
+  # ------------------------------------------------------------------ L: GRPO, MedAgentBench
+  - id: L-MAB
+    title: "GRPO on MedAgentBench (each harness's own agent): success (%) per evaluation harness"
+    post_title: "GRPO on MedAgentBench, each harness's own agent: success (%) per evaluation harness"
+    caption: "Two seeds per GRPO row (from-base: one run), 4 attempts × 61 tasks. Base and 3H SFT rows pool s0 with s0b."
+    note: "Every run: 4 attempts per task (61 tasks). xml is held out. Base and 3H SFT rows: s0 and s0b."
+    benchmark: medagentbench
+    columns:
+      - {id: parity, label: parity, vars: {h: parity}}
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: fc, label: fc, vars: {h: fc}}
+      - {id: xml, label: "xml (held out)", vars: {h: xml}}
+    rows:
+      - {id: g3h, label: "3H GRPO (rollouts: parity + Terminus-2 + fc), from 3H SFT", bold: true,
+         runs: {s1: "evals:medagentbench/qwen3-4b/grpo-3h/s1/{h}/n4", s2: "evals:medagentbench/qwen3-4b/grpo-3h/s2/{h}/n4"}}
+      - {id: gpar, label: "Single-harness GRPO (rollouts: parity), from 3H SFT",
+         runs: {s1: "evals:medagentbench/qwen3-4b/grpo-parity/s1/{h}/n4", s2: "evals:medagentbench/qwen3-4b/grpo-parity/s2/{h}/n4"}}
+      - {id: gt2, label: "Single-harness GRPO (rollouts: Terminus-2), from 3H SFT", optional: true, post: false,
+         runs: {s1: "evals:medagentbench/qwen3-4b/grpo-t2/s1/{h}/n4", s2: "evals:medagentbench/qwen3-4b/grpo-t2/s2/{h}/n4"}}
+      - {id: gbase, label: "Single-harness GRPO (rollouts: parity), from the base model", optional: true,
+         runs: {s0: "evals:medagentbench/qwen3-4b/grpo-parity-from-base/s0/{h}/n4",
+                s2: "evals:medagentbench/qwen3-4b/grpo-parity-from-base/s2/{h}/n4"}}
+      - {id: sft3h, label: "3H SFT (s0b / s0)",
+         runs: {s0b: "evals:medagentbench/qwen3-4b/3h/s0b/{h}/n4", s0: "evals:medagentbench/qwen3-4b/3h/s0/{h}/n4"}}
+      - {id: base, label: "Base model (s0b / s0)",
+         runs: {s0b: "evals:medagentbench/qwen3-4b/base/none/{h}/n4-p2", s0: "evals:medagentbench/qwen3-4b/base/none/{h}/n4"},
+         cells: {parity: {s0: "evals:medagentbench/qwen3-4b/base/none/parity/n4"}, fc: {s0: "evals:medagentbench/qwen3-4b/base/none/fc/n4"}}}   # our base parity/fc evals ran on Daytona (invalid for MAB)
+
+  # ------------------------------------------------------------------ L: GRPO, Reasoning Gym
+  - id: L-RG-easy
+    title: "GRPO on Reasoning Gym easy (each harness's own agent): success (%) per evaluation harness"
+    post_title: "GRPO on Reasoning Gym easy, each harness's own agent: score (%) per evaluation harness"
+    caption: "Two seeds for 3H GRPO and for Terminus-2 GRPO from 3H SFT, one run otherwise, 4 attempts × 96 tasks. ⏳ still training or evaluating."
+    note: "Every run: 4 attempts per task (96 tasks). Aider is held out. ⏳ = still training or evaluating."
+    benchmark: reasoning_gym
+    vars: {tier: easy}
+    columns: &rgcols
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: goose, label: Goose, vars: {h: goose}}
+      - {id: aider, label: "Aider (held out)", vars: {h: aider}}
+    rows: &rgrows
+      - {id: g3h, label: "3H GRPO (rollouts: Terminus-2 + mini-swe + Goose), from 3H SFT", bold: true,
+         runs: {s1: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-3h/s1/{h}/n4", s2: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-3h/s2/{h}/n4"}}
+      - {id: gmsw, label: "Single-harness GRPO (rollouts: mini-swe), from 3H SFT",
+         runs: {s1: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-miniswe/s1/{h}/n4"}}
+      - {id: gt2, label: "Single-harness GRPO (rollouts: Terminus-2), from 3H SFT",
+         runs: {s1: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-t2/s1/{h}/n4", s2: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-t2/s2/{h}/n4"}}
+      - {id: gt2base, label: "Single-harness GRPO (rollouts: Terminus-2), from the base model", optional: true,
+         runs: {s0: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-t2-from-base/s0/{h}/n4",
+                s2: "evals:reasoning_gym-{tier}/qwen3-4b/grpo-t2-from-base/s2/{h}/n4"}}
+      - {id: base, label: "Base model (s0b / s0)", optional: true,
+         runs: {s0b: "evals:reasoning_gym-{tier}/qwen3-4b/base/none/{h}/n4-p2", s0: "evals:reasoning_gym-{tier}/qwen3-4b/base/none/{h}/n4"}}
+
+  - id: L-RG-hard
+    title: "GRPO on Reasoning Gym hard (each harness's own agent): success (%) per evaluation harness"
+    post_title: "GRPO on Reasoning Gym hard, each harness's own agent: score (%) per evaluation harness"
+    caption: "Two seeds for 3H GRPO and for Terminus-2 GRPO from 3H SFT, one run otherwise, 4 attempts × 96 tasks. ⏳ still training or evaluating."
+    note: "Every run: 4 attempts per task (96 tasks). Aider is held out. ⏳ = still training or evaluating."
+    benchmark: reasoning_gym
+    vars: {tier: hard}
+    columns: *rgcols
+    rows: *rgrows

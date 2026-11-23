@@ -1,0 +1,213 @@
+# Tables pooled over training runs: `exp seed-tables` (exp/seedtables.py).
+#
+# Runs are named s0, s1, s2, ...: s0 is each arm's first training run (the trainers' default seed), s1 and up
+# are retrainings with that seed (exp run ... --seed N). s0b is a second training run at the default seed;
+# for the base model, which is not trained, s0 and s0b are its first and second evaluation.
+#
+# Job references are "root:relative/path"; the roots below are relative to the repository. A job's path is
+# <task set>/<model>/<setting>/<run>/<harness>/<pass>, where the pass is n<N> for N attempts per task and
+# n<N>-p<P> for the P-th repeat of that evaluation.
+#
+# `external_size: {run: [attempts per task, tasks]}` (table or column) declares the size of external runs,
+# for the how-to-read block.
+#
+# A run value is a job reference (or a list of them, pooled per task), `ext` (a number computed
+# where the per-trial files live, read from external_cells.csv), or `pending` (not available yet).
+
+roots:
+  evals: runs/evals
+
+external: external_cells.csv
+merge: [seed_tables_cluster2.yaml, seed_tables_cluster2_xml.yaml]   # runs evaluated on a second cluster, from its per-trial rewards; replace matching `ext` runs
+unscored_flag: 0.03
+tasks_expected: {medagentbench: 61, reasoning_gym: 96, bfcl_multiturn: 200, appworld: 168}   # a run scoring fewer tasks is marked §
+diff_flag: 2.0        # summary: cells whose mean moves by at least this many points between the variants
+
+variants:
+  seeds: [s1, s2, s3, s4]
+  all: [s0, s1, s2, s3, s4]
+compact_variant: all   # the variant the compact tables are written from
+variant_labels:
+  seeds: "the retraining seeds"
+  all: "s0 and the retraining seeds"
+
+tables:
+  # ------------------------------------------------------------------ rehearsal 2x2
+  - id: A
+    title: "Rehearsal 2×2: target-harness success (%)"
+    post_title: "Rehearsal 2×2: target-harness score (%)"
+    caption: "Four training runs per cell (s0 and seeds 1–3), each 4 attempts × 200 / 96 / 61 tasks (BFCL-MT / RG per tier / MAB). The BFCL-MT s0 runs were scored on a second cluster."
+    note: >-
+      Every run: 4 attempts per task. The MAB s0 runs (Terminus-2) were evaluated with task folders that predate the
+      FHIR readiness entrypoint (environment/entrypoint.sh). the BFCL-MT s0 values are the reported numbers (†);
+      its per-trial files are not in this checkout.
+    row_header: ""
+    runs: [s0, s1, s2, s3]
+    columns:
+      - {id: bfcl, label: "BFCL-MT (fc)", benchmark: bfcl_multiturn, external_size: {s0: [4, 200]},
+         vars: {B: bfcl_multiturn, tier: "", h: fc, task: json+pycall, reh: reh-fc, comb: json+pycall+reh-fc,
+                base_job: "evals:bfcl_multiturn/qwen3-4b/base/none/fc/n4-p2",
+                p_base: ext, p_task: ext, p_reh: ext, p_comb: ext}}
+      - {id: rge, label: "RG easy (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-easy", h: t2, task: miniswe+goose, reh: reh-t2, comb: miniswe+goose+reh-t2,
+                base_job: "evals:reasoning_gym-easy/qwen3-4b/base/none/t2/n4-p2",
+                p_base: "evals:reasoning_gym-easy/qwen3-4b/base/none/t2/n4", p_task: "evals:reasoning_gym-easy/qwen3-4b/miniswe+goose/s0/t2/n4",
+                p_reh: "evals:reasoning_gym-easy/qwen3-4b/reh-t2/s0/t2/n4", p_comb: "evals:reasoning_gym-easy/qwen3-4b/miniswe+goose+reh-t2/s0/t2/n4"}}
+      - {id: rgh, label: "RG hard (Terminus-2)", benchmark: reasoning_gym,
+         vars: {B: reasoning_gym, tier: "-hard", h: t2, task: miniswe+goose, reh: reh-t2, comb: miniswe+goose+reh-t2,
+                base_job: "evals:reasoning_gym-hard/qwen3-4b/base/none/t2/n4-p2",
+                p_base: "evals:reasoning_gym-hard/qwen3-4b/base/none/t2/n4", p_task: "evals:reasoning_gym-hard/qwen3-4b/miniswe+goose/s0/t2/n4",
+                p_reh: "evals:reasoning_gym-hard/qwen3-4b/reh-t2/s0/t2/n4", p_comb: "evals:reasoning_gym-hard/qwen3-4b/miniswe+goose+reh-t2/s0/t2/n4"}}
+      - {id: mab, label: "MAB (Terminus-2)", benchmark: medagentbench,
+         vars: {B: medagentbench, tier: "", h: t2, task: parity+fc, reh: reh-t2, comb: parity+fc+reh-t2,
+                base_job: "evals:medagentbench/qwen3-4b/base/none/t2/n4-p2",
+                p_base: "evals:medagentbench/qwen3-4b/base/none/t2/n4", p_task: "evals:medagentbench/qwen3-4b/parity+fc/s0/t2/n4",
+                p_reh: "evals:medagentbench/qwen3-4b/reh-t2/s0/t2/n4", p_comb: "evals:medagentbench/qwen3-4b/parity+fc+reh-t2/s0/t2/n4"}}
+    rows:
+      - id: base
+        label: "Base model (evaluations: s0 / s0b)"
+        runs: [s0, s0b]
+        variant_runs: {seeds: [s0b], all: [s0, s0b]}
+        patterns: {s0b: "{base_job}", s0: "{p_base}"}
+      - id: task
+        label: Task supervision only
+        patterns: {s1: "evals:{B}{tier}/qwen3-4b/{task}/s1/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{task}/s2/{h}/n4",
+                   s3: "evals:{B}{tier}/qwen3-4b/{task}/s3/{h}/n4", s0: "{p_task}"}
+      - id: reh
+        label: Rehearsal only
+        patterns: {s1: "evals:{B}{tier}/qwen3-4b/{reh}/s1/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{reh}/s2/{h}/n4",
+                   s3: "evals:{B}{tier}/qwen3-4b/{reh}/s3/{h}/n4", s0: "{p_reh}"}
+      - id: comb
+        label: Task supervision + rehearsal
+        bold: true
+        patterns: {s1: "evals:{B}{tier}/qwen3-4b/{comb}/s1/{h}/n4", s2: "evals:{B}{tier}/qwen3-4b/{comb}/s2/{h}/n4",
+                   s3: "evals:{B}{tier}/qwen3-4b/{comb}/s3/{h}/n4", s0: "{p_comb}"}
+
+  # ------------------------------------------------------------------ distillation ladder, MAB
+  - id: K-MAB
+    title: "Distillation ladder, MedAgentBench: success (%) per evaluation harness"
+    post_title: "Distillation ladder, MedAgentBench: success (%) per evaluation harness"
+    caption: "Four runs per cell: s0 (4 attempts × 61 tasks) and seeds 1–3 (1 × 61). Seeds 2–3, except the Terminus-2 column of Terminus-2-only and 3H, were evaluated on a second cluster, where ten runs cover 51–60 of the 61 tasks."
+    note: >-
+      Seeds 1–3: 1 attempt per task (61 trials); s0: 4 attempts. Seed 1 is local (EIDF). Seeds 2–3:
+      the Terminus-2 column of Terminus-2-only and 3H is local (EIDF); every other seed-2/3 cell is a number from a
+      second cluster's run (†). The local seed-2/3 fc folders are Daytona runs (invalid for MAB) and are
+      not used. xml is held out.
+    benchmark: medagentbench
+    external_size: {s2: [1, 61], s3: [1, 61]}
+    runs: [s0, s1, s2, s3]
+    patterns: {s1: "evals:medagentbench/qwen3-4b/{arm}/s1/{h}/n1", s2: ext, s3: ext,
+               s0: "evals:medagentbench/qwen3-4b/{arm}/s0/{h}/n4"}
+    columns:
+      - {id: parity, label: parity, vars: {h: parity}}
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: fc, label: fc, vars: {h: fc}}
+      - {id: xml, label: "xml (held out)", vars: {h: xml}}
+    rows:
+      - {id: parity-only, label: parity-only, vars: {arm: parity-only}}
+      - {id: t2-only, label: Terminus-2-only, vars: {arm: t2-only},
+         cells: {t2: {s2: "evals:medagentbench/qwen3-4b/t2-only/s2/t2/n1", s3: "evals:medagentbench/qwen3-4b/t2-only/s3/t2/n1"}}}
+      - {id: fc-only, label: fc-only, vars: {arm: fc-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h},
+         cells: {t2: {s2: "evals:medagentbench/qwen3-4b/3h/s2/t2/n1", s3: "evals:medagentbench/qwen3-4b/3h/s3/t2/n1"}}}
+
+  # ------------------------------------------------------------------ distillation ladder, RG
+  - id: K-RG-easy
+    title: "Distillation ladder, Reasoning Gym easy: success (%) per evaluation harness"
+    post_title: "Distillation ladder, Reasoning Gym easy: score (%) per evaluation harness"
+    caption: "Four runs per cell: s0 (4 attempts × 96 tasks) and seeds 1–3 (1 × 96). Goose-only seed 3 on Goose and mini-swe was evaluated on a second cluster."
+    note: >-
+      Seeds 1–3: 1 attempt per task (96 trials), EIDF; s0: 4 attempts. Aider is held out. Cells marked †
+      were re-run on a second cluster (the local jobs lost most trials in an install outage).
+    benchmark: reasoning_gym
+    external_size: {s3: [1, 96]}
+    runs: [s0, s1, s2, s3]
+    patterns: {s1: "evals:reasoning_gym-easy/qwen3-4b/{arm}/s1/{h}/n1", s2: "evals:reasoning_gym-easy/qwen3-4b/{arm}/s2/{h}/n1",
+               s3: "evals:reasoning_gym-easy/qwen3-4b/{arm}/s3/{h}/n1", s0: "evals:reasoning_gym-easy/qwen3-4b/{arm}/s0/{h}/n4"}
+    columns:
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: goose, label: Goose, vars: {h: goose}}
+      - {id: aider, label: "Aider (held out)", vars: {h: aider}}
+    rows:
+      - {id: t2-only, label: Terminus-2-only, vars: {arm: t2-only}}
+      - {id: miniswe-only, label: mini-swe-only, vars: {arm: miniswe-only}}
+      - {id: goose-only, label: Goose-only, vars: {arm: goose-only},
+         cells: {goose: {s3: ext}, miniswe: {s3: ext}}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}
+
+  - id: K-RG-hard
+    title: "Distillation ladder, Reasoning Gym hard: success (%) per evaluation harness"
+    post_title: "Distillation ladder, Reasoning Gym hard: score (%) per evaluation harness"
+    caption: "Four runs per cell: s0 (4 attempts × 96 tasks) and seeds 1–3 (1 × 96). Seed 2 of Goose-only and 3H on Goose and mini-swe was evaluated on a second cluster."
+    note: >-
+      Seeds 1–3: 1 attempt per task (96 trials), EIDF; s0: 4 attempts. Aider is held out. Cells marked †
+      were re-run on a second cluster.
+    benchmark: reasoning_gym
+    external_size: {s2: [1, 96]}
+    runs: [s0, s1, s2, s3]
+    patterns: {s1: "evals:reasoning_gym-hard/qwen3-4b/{arm}/s1/{h}/n1", s2: "evals:reasoning_gym-hard/qwen3-4b/{arm}/s2/{h}/n1",
+               s3: "evals:reasoning_gym-hard/qwen3-4b/{arm}/s3/{h}/n1", s0: "evals:reasoning_gym-hard/qwen3-4b/{arm}/s0/{h}/n4"}
+    columns:
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: goose, label: Goose, vars: {h: goose}}
+      - {id: aider, label: "Aider (held out)", vars: {h: aider}}
+    rows:
+      - {id: t2-only, label: Terminus-2-only, vars: {arm: t2-only}}
+      - {id: miniswe-only, label: mini-swe-only, vars: {arm: miniswe-only}}
+      - {id: goose-only, label: Goose-only, vars: {arm: goose-only},
+         cells: {goose: {s2: ext}, miniswe: {s2: ext}}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h},
+         cells: {goose: {s2: ext}, miniswe: {s2: ext}}}
+
+  # ------------------------------------------------------------------ distillation ladder, BFCL-MT
+  - id: K-BFCL
+    title: "Distillation ladder, BFCL multi-turn: success (%) per evaluation harness"
+    post_title: "Distillation ladder, BFCL multi-turn: success (%) per evaluation harness"
+    caption: "Four runs per cell (s0 and seeds 1–3), each 4 attempts × 200 tasks, all evaluated on a second cluster."
+    note: >-
+      Every run: 4 attempts per task. All seeds were run on a second cluster (†); the s0 values are the
+      reported numbers (†).
+    benchmark: bfcl_multiturn
+    external_size: {s1: [4, 200], s2: [4, 200], s3: [4, 200], s0: [4, 200]}
+    runs: [s0, s1, s2, s3]
+    patterns: {s1: ext, s2: ext, s3: ext, s0: ext}
+    columns:
+      - {id: fc, label: fc, vars: {}}
+      - {id: json, label: json, vars: {}}
+      - {id: pycall, label: pycall, vars: {}}
+      - {id: xml, label: "xml (held out)", vars: {}}
+    rows:
+      - {id: fc-only, label: fc-only}
+      - {id: json-only, label: json-only}
+      - {id: pycall-only, label: pycall-only}
+      - {id: 3h, label: 3H, bold: true}
+
+  # ------------------------------------------------------------------ AppWorld ladder
+  - id: K-AW
+    title: "Distillation ladder, AppWorld: success (%) per evaluation harness"
+    post_title: "Distillation ladder, AppWorld: success (%) per evaluation harness"
+    caption: "Five runs per cell (s0 and seeds 1–4), each 4 attempts × 168 tasks. s0 was evaluated on a second cluster."
+    note: >-
+      Seeds 1–4: 4 attempts per task (672 trials), EIDF (experiment seed-variance-ladder-appworld). The s0 values
+      are the reported numbers (†, results/cells.csv); its per-trial files are on a second cluster. xml is held out.
+    benchmark: appworld
+    external_size: {s0: [4, 168]}
+    runs: [s0, s1, s2, s3, s4]
+    patterns:
+      s1: "evals:appworld/qwen3-4b/{arm}/s1/{h}/n4"
+      s2: "evals:appworld/qwen3-4b/{arm}/s2/{h}/n4"
+      s3: "evals:appworld/qwen3-4b/{arm}/s3/{h}/n4"
+      s4: "evals:appworld/qwen3-4b/{arm}/s4/{h}/n4"
+      s0: ext
+    columns:
+      - {id: code, label: code, vars: {h: code}}
+      - {id: fc, label: fc, vars: {h: fc}}
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: xml, label: "xml (held out)", vars: {h: xml}}
+    rows:
+      - {id: code-only, label: code-only, vars: {arm: code-only}}
+      - {id: fc-only, label: fc-only, vars: {arm: fc-only}}
+      - {id: miniswe-only, label: mini-swe-only, vars: {arm: miniswe-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}

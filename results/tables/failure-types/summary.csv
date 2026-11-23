@@ -1,0 +1,9 @@
+benchmark,tier,arm,job,scored,failed,delivery_interface_share,delivery_interface_per100,delivery_invalid_per100,delivery_submission_per100,delivery_termination_per100,trace_interface_share,trace_interface_per100,trace_invalid_per100,trace_submission_per100,trace_termination_per100
+medagentbench,,task,medagentbench/qwen3-4b/parity+fc/s0b/t2/n4,244,223,0.807,73.8,2.5,69.7,1.6,0.807,73.8,2.5,69.7,1.6
+medagentbench,,comb,medagentbench/qwen3-4b/parity+fc+reh-t2/s0b/t2/n4,244,158,0.392,25.4,24.6,0.4,0.4,0.994,64.3,63.1,0.4,0.8
+reasoning_gym,easy,task,reasoning_gym-easy/qwen3-4b/miniswe+goose/s0b/t2/n4,384,286,0.895,66.7,58.6,3.9,4.2,0.979,72.9,64.1,3.9,4.9
+reasoning_gym,easy,comb,reasoning_gym-easy/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4,383,188,0.644,31.6,2.6,26.1,2.9,0.654,32.1,3.1,26.1,2.9
+reasoning_gym,hard,task,reasoning_gym-hard/qwen3-4b/miniswe+goose/s0b/t2/n4,379,310,0.89,72.8,57.3,5.5,10.0,0.971,79.4,62.0,5.5,11.9
+reasoning_gym,hard,comb,reasoning_gym-hard/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4,384,235,0.732,44.8,3.1,31.5,10.2,0.745,45.6,3.6,31.5,10.4
+bfcl_multiturn,,task,bfcl_multiturn/qwen3-4b/json+pycall/s0b/fc/n4,800,610,0.862,65.8,64.5,0.0,1.2,0.862,65.8,64.5,0.0,1.2
+bfcl_multiturn,,comb,bfcl_multiturn/qwen3-4b/json+pycall+reh-fc/s0b/fc/n4,800,337,0.166,7.0,1.8,0.0,5.2,0.166,7.0,1.8,0.0,5.2

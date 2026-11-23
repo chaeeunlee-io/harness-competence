@@ -1,0 +1,38 @@
+# Failure types of failed trials: `exp failure-types`, `exp annotation-sample`, `exp annotation-tables`.
+# The cells are the s0b runs of the rehearsal 2x2 (task supervision only vs task supervision
+# + target-harness rehearsal), each on its benchmark's target harness. A job is named by its folder below
+# `evals_root`. `annotate` is the number of failed
+# trials per arm drawn for human annotation.
+evals_root: runs/evals
+cells:
+  - benchmark: medagentbench
+    harness: t2
+    annotate: 18
+    arms: {task: medagentbench/qwen3-4b/parity+fc/s0b/t2/n4, comb: medagentbench/qwen3-4b/parity+fc+reh-t2/s0b/t2/n4}
+  - benchmark: reasoning_gym
+    tier: easy
+    harness: t2
+    annotate: 10
+    arms: {task: reasoning_gym-easy/qwen3-4b/miniswe+goose/s0b/t2/n4, comb: reasoning_gym-easy/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4}
+  - benchmark: reasoning_gym
+    tier: hard
+    harness: t2
+    annotate: 8
+    arms: {task: reasoning_gym-hard/qwen3-4b/miniswe+goose/s0b/t2/n4, comb: reasoning_gym-hard/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4}
+  - benchmark: bfcl_multiturn
+    harness: fc
+    annotate: 17
+    arms: {task: bfcl_multiturn/qwen3-4b/json+pycall/s0b/fc/n4, comb: bfcl_multiturn/qwen3-4b/json+pycall+reh-fc/s0b/fc/n4}
+
+annotation:
+  seed: 0          # shuffles each arm's failed trials before drawing
+  order_seed: 1    # shuffles the drawn trials into annotation order
+  table_order: [bfcl_multiturn, reasoning_gym, medagentbench]
+  # Worked examples shown to the annotators with their labels explained. Part of the sample, not labelled.
+  examples:
+    - {job: medagentbench/qwen3-4b/parity+fc/s0b/t2/n4, task: task2_20}
+    - {job: medagentbench/qwen3-4b/parity+fc+reh-t2/s0b/t2/n4, task: task3_21}
+    - {job: reasoning_gym-easy/qwen3-4b/miniswe+goose/s0b/t2/n4, task: reasoning-gym-arc-arc-1d-easy00c}
+    - {job: reasoning_gym-easy/qwen3-4b/miniswe+goose+reh-t2/s0b/t2/n4, task: reasoning-gym-algorithmic-pool-m}
+    - {job: bfcl_multiturn/qwen3-4b/json+pycall/s0b/fc/n4, task: bfclmt-miss-param-92}
+    - {job: bfcl_multiturn/qwen3-4b/json+pycall+reh-fc/s0b/fc/n4, task: bfclmt-miss-param-76}

@@ -1,0 +1,173 @@
+name: medagentbench
+display: MedAgentBench
+short: MAB
+cluster: 2
+splits:
+  test:  {task_list: benchmarks/medagentbench/splits/test.txt}
+  train: {task_list: benchmarks/medagentbench/splits/train.txt}   # the as-run set: 215 tasks, category 7 not used
+  rehearsal-t2: {generate: [build/gen_rehearsal.py, --harness, t2]}
+  rehearsal-fc: {generate: [build/gen_rehearsal.py, --harness, fc]}
+harnesses:
+  trained: [parity, t2, fc]
+  heldout: [xml]
+serve:
+  max_model_len: 32768
+  reasoning_parser: deepseek_r1
+  tool_call_parser: hermes
+  per_model:
+    # Serving protocol: Qwen3 is served with deepseek_r1 for every reported result. The prompt does not open
+    # <think>, so a reply that does not close a reasoning block is read as containing no action and the harness asks
+    # the model to act. An alternative parser, explicit_think (training/templates/explicit_think_reasoning_parser.py),
+    # can be configured here with `reasoning_parser`, `reasoning_parser_plugin` and a `protocol` name (results served
+    # under a named protocol carry it in their names); see docs/COMMANDS.md, section 4.
+    # Gemma (appendix): As run, fc was served with the Hermes
+    # template and tool parser; parity, t2 and xml plain (Gemma's own template, no tool parser),
+    # because parsed tool calls fold into back-to-back user turns, which Gemma's template rejects.
+    # `chat_template: base` is the base model's template, also for checkpoints trained with Hermes.
+    # t2 was served with the merge-tolerant template (Gemma's, with consecutive same-role messages merged instead of
+    # rejected; identical on alternating conversations): Terminus-2's summarisation hand-off sends such messages, and
+    # under the stock template those episodes end in a server error and go unscored.
+    gemma-3-4b-it:
+      reasoning_parser: null
+      tool_call_parser: null
+      chat_template: base
+      per_harness:
+        fc: {tool_call_parser: hermes, chat_template: training/templates/gemma3_hermes_fc.jinja2}
+        t2: {chat_template: training/templates/gemma3_merge_tolerant.jinja2}
+eval:
+  n_attempts: 4
+  layer: n4-T0.7
+  aggregate: pooled          # mean over all trials
+  bootstrap: {B: 1000, seed: 20260923, hi_index: 974, binarize: false}   # task-level percentile bootstrap
+  bootstrap_unit: task
+  concurrency: 10
+  agent:
+    import_path: benchmarks.medagentbench.harnesses.harness_dispatch:DispatchAgent
+    provider: hosted_vllm
+    runs_in: host            # the dispatch agent calls the model from the harbor process
+    kwargs:
+      harness: "{harness}"
+      api_base: "{api_base}"
+      temperature: 0.7
+      model_info: {input_cost_per_token: 0.0, max_input_tokens: 24576, max_output_tokens: 8192, output_cost_per_token: 0.0}
+  per_harness: {}
+sft:
+  cudnn_sdp: true
+  args: {epochs: 2, max_len: 32768, liger: true, optim: paged_adamw_8bit}
+
+# One entry per setting. The key is the setting name used everywhere: the pool file
+# benchmarks/medagentbench/pools/<key>.jsonl, the `arm` column of results/cells.csv, and --pool.
+# chat_template: per-model override of configs/models.yaml (null = the model's own template),
+# as each arm was trained.
+pools:
+  base:                 {paper: Base, file: null}
+  # Specialists vs 3H
+  parity-only:          {paper: parity-only, file: benchmarks/medagentbench/pools/parity-only.jsonl,
+                         chat_template: {gemma-3-4b-it: null}}
+  t2-only:              {paper: Terminus-2-only, file: benchmarks/medagentbench/pools/t2-only.jsonl}
+  fc-only:              {paper: fc-only, file: benchmarks/medagentbench/pools/fc-only.jsonl}
+  3h:                   {paper: 3H, file: benchmarks/medagentbench/pools/3h.jsonl}
+  # Cross-harness supervision vs rehearsal (target t2): cross-task, rehearsal, both
+  parity+fc:            {paper: "Cross-task (parity+fc)", file: benchmarks/medagentbench/pools/parity+fc.jsonl}
+  reh-t2:               {paper: "Rehearsal (t2)", file: benchmarks/medagentbench/pools/reh-t2.jsonl}
+  parity+fc+reh-t2:     {paper: "Cross-task + rehearsal", file: benchmarks/medagentbench/pools/parity+fc+reh-t2.jsonl}
+  # Rehearsal variants (all-conditions-mab)
+  parity+fc+reh-t2~32b: {paper: "parity+fc+32B-rehearsal", file: benchmarks/medagentbench/pools/parity+fc+reh-t2~32b.jsonl}
+  reh-t2~fail:          {paper: rehearsal-fail, file: benchmarks/medagentbench/pools/reh-t2~fail.jsonl,
+                         chat_template: {gemma-3-4b-it: null}}
+  # Target fc (all-conditions-mab): cross-task, rehearsal, both
+  parity+t2:            {paper: "parity+Terminus-2-only", file: benchmarks/medagentbench/pools/parity+t2.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  reh-fc:               {paper: fc-rehearsal-only, file: benchmarks/medagentbench/pools/reh-fc.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  parity+t2+reh-fc:     {paper: "parity+Terminus-2+fc-rehearsal", file: benchmarks/medagentbench/pools/parity+t2+reh-fc.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  # Size-matched controls for the rehearsal 2x2. Derived from the
+  # pools above (subsampled or repeated rows, seed 0): exp sft builds them on first use, or
+  # exp build-pool -b medagentbench --pool <name>; they are written to runs/pools/medagentbench/.
+  # two ways to shrink the combined pool to the task-only size: every rehearsal row kept, task rows subsampled;
+  # or the full pool's mixture (70% task, 30% rehearsal) kept and both subsampled
+  parity+fc+reh-t2~rows258:    {paper: "Cross-task + rehearsal, 258 rows (all rehearsal rows)", derived: {rows: [{pool: reh-t2}, {pool: parity+fc, n: 151}]}}
+  parity+fc+reh-t2~rows258mix: {paper: "Cross-task + rehearsal, 258 rows (same mixture)", derived: {rows: [{pool: reh-t2, n: 76}, {pool: parity+fc, n: 182}]}}
+  parity+fc~rows365rep:     {paper: "Cross-task, 365 rows (repeated)", derived: {rows: [{pool: parity+fc, n: 365, repeat: true}]}}
+  reh-t2~rows365rep:        {paper: "Rehearsal (t2), 365 rows (repeated)", derived: {rows: [{pool: reh-t2, n: 365, repeat: true}]}}
+  parity+fc+reh-fc~rows365: {paper: "Cross-task + fc-rehearsal (non-target), 365 rows", derived: {rows: [{pool: parity+fc}, {pool: reh-fc, n: 107}]}}
+  # Failed-rehearsal control: task supervision plus the 107 rehearsal
+  # trajectories that failed the verifier (reh-t2~fail, shipped), same size as parity+fc+reh-t2
+  parity+fc+reh-t2~fail:    {paper: "Cross-task + failed rehearsal", derived: {rows: [{pool: parity+fc}, {pool: reh-t2~fail}]}}
+  # Clean-demonstrator control: the 107 rehearsal rows made by the Qwen3-32B teacher, which was never
+  # fine-tuned on target-harness solutions, taken out of the shipped parity+fc+reh-t2~32b pool (its combined arm is in the paper)
+  reh-t2~32b:               {paper: "Rehearsal (t2), 32B demonstrator", derived: {rows: [{pool: parity+fc+reh-t2~32b, source: rehearsal~32b}]}}
+  # fc-as-target diagnostic: the fc-target 2x2's task supervision was parity+t2; this arm drops the
+  # Terminus-2 traces to test whether they interfered with fc. Same recipe as the fc-target arms (the model's own template).
+  parity+reh-fc:            {paper: "parity + fc-rehearsal (no Terminus-2 supervision), 258 rows", derived: {rows: [{pool: parity-only}, {pool: reh-fc}]},
+                             chat_template: {qwen3-4b: null}}
+  # Gemma only (gemma-mab): rehearsal traces made by Gemma, and parity + t2 rehearsal
+  reh-fc~gemma:         {paper: fc-rehearsal-only, file: benchmarks/medagentbench/pools/reh-fc~gemma.jsonl}
+  parity+t2+reh-fc~gemma: {paper: "parity+Terminus-2+fc-rehearsal", file: benchmarks/medagentbench/pools/parity+t2+reh-fc~gemma.jsonl}
+  parity+reh-t2:        {paper: "parity+rehearsal", file: benchmarks/medagentbench/pools/parity+reh-t2.jsonl}
+  # 3H at matched data volume (matched-volume-mab)
+  3h~n108:              {paper: "3H@108 random", file: benchmarks/medagentbench/pools/3h~n108.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  3h~n108~sub2:           {paper: "3H@108 random (seed 2)", file: benchmarks/medagentbench/pools/3h~n108~sub2.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  3h~n108~sub3:           {paper: "3H@108 random (seed 3)", file: benchmarks/medagentbench/pools/3h~n108~sub3.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  3h~n108~cov:          {paper: "3H@108 coverage-max", file: benchmarks/medagentbench/pools/3h~n108~cov.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  3h~n150:              {paper: "3H@150 random", file: benchmarks/medagentbench/pools/3h~n150.jsonl,
+                         chat_template: {qwen3-4b: null}}
+  3h~n150~cov:          {paper: "3H@150 coverage-max", file: benchmarks/medagentbench/pools/3h~n150~cov.jsonl,
+                         chat_template: {qwen3-4b: null}}
+teacher:   # Qwen3-32B under the student protocol, served WITH the reasoning parser (the corrected re-run)
+  protocol: {}
+rl:
+  init_pool: 3h
+  band: benchmarks/medagentbench/splits/band.json
+  # A GRPO run that starts elsewhere than init_pool (exp grpo --rl-init) rolls out on this same band, so the start
+  # is the only difference from the paper's runs. A start-specific band (build/build_band.py on probe runs of that
+  # checkpoint) can be registered under `bands: {<pool>: <split json>}`; none is, by design.
+  train_dir: medagentbench_train209
+  rollouts_matched: {multi_harness_epochs: 1, single_harness_epochs: 3}
+  agent_import_path: benchmarks.medagentbench.harnesses.harness_dispatch:DispatchAgent
+  # the agent each rollout harness must have run (its agent_info.name), checked by exp grpo after training
+  rollout_agents: {parity: medagentbench-trainable-agent, t2: terminus-2, fc: medagentbench-fc}
+  # How the trainer's one inference server serves a model's rollouts, where that differs from evaluation serving.
+  # Gemma is evaluated with a different template and tool parser on fc than on parity and t2 (serve.per_model), which
+  # one server cannot do. Its GRPO rollouts on every harness use the unified template instead: Gemma's template with
+  # consecutive same-role messages merged (Terminus-2 sends them; the stock template rejects them) and assistant tool
+  # calls rendered for the Hermes parser (as in gemma3_hermes_fc, the template Gemma's SFT checkpoints trained with).
+  rollout_serve:
+    gemma-3-4b-it: {chat_template: training/templates/gemma3_rl_unified.jinja2, tool_call_parser: hermes}
+  harness_kwargs:
+    t2:     {model_info: {max_input_tokens: 24576, max_output_tokens: 8192, input_cost_per_token: 0.0, output_cost_per_token: 0.0}}
+    parity: {model_info: {max_input_tokens: 24576, max_output_tokens: 8192, input_cost_per_token: 0.0, output_cost_per_token: 0.0}}
+    fc:     {max_rounds: 8, max_tokens: 8192}
+  extra_overrides: {}
+collect:   # teacher traces for the pools: exp collect -b medagentbench (serve the teacher first)
+  model: qwen3-32b
+  split: train
+  n_attempts: 6
+  kwargs: {temperature: 1.0, model_info: {input_cost_per_token: 0.0, max_input_tokens: 28672, max_output_tokens: 4096, output_cost_per_token: 0.0}}
+  per_harness:
+    fc: {kwargs: {model_info: {input_cost_per_token: 0.0, max_input_tokens: 28672, max_output_tokens: 8192, output_cost_per_token: 0.0}}, drop_kwargs: [temperature]}
+    # Served with a reasoning parser, Terminus-2 would drop the model's earlier reasoning from the chat;
+    # the as-run teacher wrote it inline and so saw it. Keep it in the chat.
+    t2: {kwargs: {interleaved_thinking: true}}
+  jobs:   #
+    - {job: teacher-parity, harness: parity}
+    - {job: teacher-t2,     harness: t2}
+    - {job: teacher-fc,     harness: fc}
+rehearsal:   # rehearsal traces: a demonstrator on the rehearsal tasks: exp collect -b medagentbench --rehearsal
+  - {job: rehearsal-t2,       harness: t2, split: rehearsal-t2, demonstrator: "the 3h SFT checkpoint", n_attempts: 6, kwargs: {temperature: 1.0}}
+  - {job: rehearsal-t2~32b,   harness: t2, split: rehearsal-t2, demonstrator: "the Qwen3-32B teacher", n_attempts: 6, kwargs: {temperature: 1.0}}
+  - {job: rehearsal-fc,       harness: fc, split: rehearsal-fc, demonstrator: "the 3h SFT checkpoint", n_attempts: 6, kwargs: {temperature: 1.0}}
+  - {job: rehearsal-fc~gemma, harness: fc, split: rehearsal-fc, demonstrator: "Gemma's 3h SFT checkpoint", n_attempts: 6, kwargs: {temperature: 1.0}}
+build:   # exp build-pool -b medagentbench [--pool <setting>]: which script writes which settings, in order
+  - {script: build/build_pools.py, writes: [parity-only, t2-only, fc-only, 3h]}
+  - {script: build/build_rehearsal.py, writes: [reh-t2, parity+fc+reh-t2, parity+fc, reh-t2~fail]}
+  - {script: build/build_rehearsal.py, args: [--demonstrator, 32b], writes: [parity+fc+reh-t2~32b]}
+  - {script: build/build_rehearsal_fc.py, writes: [reh-fc, parity+t2, parity+t2+reh-fc]}
+  - {script: build/build_rehearsal_fc.py, args: [--demonstrator, gemma], writes: [reh-fc~gemma, parity+t2+reh-fc~gemma]}
+  - {script: build/build_pools.py, args: [--with-parity-rehearsal], writes: [parity+reh-t2]}
+  - {script: build/build_volmatched.py, reads: pools, writes: [3h~n108, 3h~n150, 3h~n108~sub2, 3h~n108~sub3, 3h~n108~cov, 3h~n150~cov]}

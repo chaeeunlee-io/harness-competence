@@ -1,0 +1,133 @@
+# Runs evaluated on a second cluster, read from its rewards-only export (per-trial reward.txt + config.json)
+# under runs/evals-cluster2/, which is laid out like runs/evals/. Merged into seed_tables.yaml through its
+# `merge:` entry.
+#
+# Table, row, column and run ids are those of seed_tables.yaml so the two can be merged. Which run each
+# exported folder holds was established from its config.json (`model_name`, `environment.type`), not from
+# matching reported numbers.
+
+roots:
+  evals: runs/evals-cluster2
+
+external: external_cells.csv
+unscored_flag: 0.03
+diff_flag: 2.0
+
+variants:
+  seeds: [s1, s2, s3, s0b]
+  all: [s0, s1, s2, s3, s0b]
+variant_labels:
+  seeds: "seeds available on this cluster"
+  all: "s0 and the seeds available on this cluster"
+
+tables:
+  # ------------------------------------------------------------------ rehearsal 2x2
+  - id: A
+    title: "Rehearsal 2×2: target-harness success (%)"
+    note: >-
+      Only the BFCL-MT column has per-trial files on this cluster. `s0b` is the second evaluation of
+      the base model (config.json model_name = p4-base); task / reh / comb are the BFCL-MT s0 runs
+      (model_name = d-drillK / d-drillonly / d-drillKplus), 4 attempts x 200 tasks. The s0 base
+      evaluation has no per-trial files here. The MAB and RG columns have none either: this cluster's
+      copy of the s0 jobs holds only appworld and webarena.
+    row_header: ""
+    runs: [s0, s0b]
+    columns:
+      - {id: bfcl, label: "BFCL-MT (fc)", benchmark: bfcl_multiturn}
+    rows:
+      - {id: base, label: "Base model (evaluations: s0 / s0b)", runs: [s0b],
+         patterns: {s0b: "evals:bfcl_multiturn/qwen3-4b/base/none/fc/n4-p2"}}
+      - {id: task, label: Task supervision only, runs: [s0],
+         patterns: {s0: "evals:bfcl_multiturn/qwen3-4b/json+pycall/s0/fc/n4"}}
+      - {id: reh, label: Rehearsal only, runs: [s0],
+         patterns: {s0: "evals:bfcl_multiturn/qwen3-4b/reh-fc/s0/fc/n4"}}
+      - {id: comb, label: Task supervision + rehearsal, bold: true, runs: [s0],
+         patterns: {s0: "evals:bfcl_multiturn/qwen3-4b/json+pycall+reh-fc/s0/fc/n4"}}
+
+  # ------------------------------------------------------------------ distillation ladder, MAB
+  - id: K-MAB
+    title: "Distillation ladder, MedAgentBench: success (%) per evaluation harness"
+    note: >-
+      Seeds 2 and 3, 1 attempt per task (61 trials), run on this cluster. Every folder used has
+      environment.type = eidf; no Daytona-evaluated MAB job is referenced. Seed 1 and s0
+      have no per-trial files here. One superseded folder
+      (medagentbench-qwen3-4b-t2-only-s3-fc--partial-n44-infra-20261111) is left out; the clean rerun
+      of that cell is used instead.
+    benchmark: medagentbench
+    runs: [s2, s3]
+    patterns: {s2: "evals:medagentbench/qwen3-4b/{arm}/s2/{h}/n1",
+               s3: "evals:medagentbench/qwen3-4b/{arm}/s3/{h}/n1"}
+    columns:
+      - {id: parity, label: parity, vars: {h: parity}}
+      - {id: t2, label: Terminus-2, vars: {h: t2}}
+      - {id: fc, label: fc, vars: {h: fc}}
+      - {id: xml, label: "xml (held out)", vars: {h: xml}}
+    rows:
+      - {id: parity-only, label: parity-only, vars: {arm: parity-only}}
+      - {id: t2-only, label: Terminus-2-only, vars: {arm: t2-only}}
+      - {id: fc-only, label: fc-only, vars: {arm: fc-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}
+
+  # ------------------------------------------------------------------ distillation ladder, RG
+  - id: K-RG-easy
+    title: "Distillation ladder, Reasoning Gym easy: success (%) per evaluation harness"
+    note: >-
+      Only the Goose-only seed-3 re-runs were done on this cluster (1 attempt per task, 96 trials).
+      All other K-RG-easy cells have no per-trial files here.
+    benchmark: reasoning_gym
+    runs: [s3]
+    patterns: {s3: "evals:reasoning_gym-easy/qwen3-4b/{arm}/s3/{h}/n1"}
+    columns:
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: goose, label: Goose, vars: {h: goose}}
+    rows:
+      - {id: goose-only, label: Goose-only, vars: {arm: goose-only}}
+
+  - id: K-RG-hard
+    title: "Distillation ladder, Reasoning Gym hard: success (%) per evaluation harness"
+    note: >-
+      Only the seed-2 re-runs of Goose-only and 3H were done on this cluster (1 attempt per task,
+      96 trials). All other K-RG-hard cells have no per-trial files here.
+    benchmark: reasoning_gym
+    runs: [s2]
+    patterns: {s2: "evals:reasoning_gym-hard/qwen3-4b/{arm}/s2/{h}/n1"}
+    columns:
+      - {id: miniswe, label: mini-swe, vars: {h: miniswe}}
+      - {id: goose, label: Goose, vars: {h: goose}}
+    rows:
+      - {id: goose-only, label: Goose-only, vars: {arm: goose-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}
+
+  # ------------------------------------------------------------------ distillation ladder, BFCL-MT
+  - id: K-BFCL
+    title: "Distillation ladder, BFCL multi-turn: success (%) per evaluation harness"
+    note: >-
+      Every cell here is computed from per-trial files on this cluster, where the original spec had
+      only reported numbers. Each seed run is the pool of that seed's 4 single-attempt passes
+      (n1, n1-p2, n1-p3, n1-p4), pooled per task = 4 attempts x 200 tasks. s0 (config.json model_name
+      v2-fc / v2-json / v2-code / v2-3h, where `code` is the pycall harness) is also 4 attempts x 200 tasks.
+    benchmark: bfcl_multiturn
+    runs: [s0, s1, s2, s3]
+    patterns:
+      s1: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s1/{h}/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/{h}/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/{h}/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/{h}/n1-p4"]
+      s2: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s2/{h}/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/{h}/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/{h}/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/{h}/n1-p4"]
+      s3: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s3/{h}/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/{h}/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/{h}/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/{h}/n1-p4"]
+      s0: "evals:bfcl_multiturn/qwen3-4b/{arm}/s0/{h}/n4"
+    columns:
+      - {id: fc, label: fc, vars: {h: fc}}
+      - {id: json, label: json, vars: {h: json}}
+      - {id: pycall, label: pycall, vars: {h: pycall}}
+    rows:
+      - {id: fc-only, label: fc-only, vars: {arm: fc-only}}
+      - {id: json-only, label: json-only, vars: {arm: json-only}}
+      - {id: pycall-only, label: pycall-only, vars: {arm: pycall-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}

@@ -1,0 +1,37 @@
+# BFCL multi-turn held-out xml runs, evaluated on a second cluster and read from its rewards-only export
+# (per-trial reward.txt + config.json) under runs/evals-cluster2/. Merged into seed_tables.yaml through
+# its `merge:` entry as the `xml` column of K-BFCL.
+#
+# Seed runs: 4 single-attempt passes per seed, pooled per task = 4 attempts x 200 tasks.
+# s0: 4 attempts x 200 tasks; each reproduces its reported value in results/cells.csv. The base model on
+# the same harness (reported 20.58) is kept as a row for the record; K-BFCL has no base row.
+
+roots:
+  evals: runs/evals-cluster2
+
+tables:
+  - id: K-BFCL
+    benchmark: bfcl_multiturn
+    runs: [s0, s1, s2, s3]
+    patterns:
+      s1: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s1/xml/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/xml/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/xml/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s1/xml/n1-p4"]
+      s2: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s2/xml/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/xml/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/xml/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s2/xml/n1-p4"]
+      s3: ["evals:bfcl_multiturn/qwen3-4b/{arm}/s3/xml/n1",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/xml/n1-p2",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/xml/n1-p3",
+           "evals:bfcl_multiturn/qwen3-4b/{arm}/s3/xml/n1-p4"]
+      s0: "evals:bfcl_multiturn/qwen3-4b/{arm}/s0/xml/n4"
+    columns:
+      - {id: xml, label: "xml (held out)", vars: {}}
+    rows:
+      - {id: base, label: "Base model", runs: [s0], patterns: {s0: "evals:bfcl_multiturn/qwen3-4b/base/none/xml/n4"}}
+      - {id: fc-only, label: fc-only, vars: {arm: fc-only}}
+      - {id: json-only, label: json-only, vars: {arm: json-only}}
+      - {id: pycall-only, label: pycall-only, vars: {arm: pycall-only}}
+      - {id: 3h, label: 3H, bold: true, vars: {arm: 3h}}

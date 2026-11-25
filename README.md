@@ -176,15 +176,21 @@ Training and held-out harnesses:
 
 Rewards come directly from each benchmark's verifier, with no shaping for trajectory length, number of turns, or termination. MedAgentBench, BFCL, and AppWorld use binary rewards. Reasoning Gym uses scores in `[0,1]`.
 
-<!--
 ## Citation
 
-The paper is not on arXiv yet. A BibTeX entry will be added here once it is.
-
+```bibtex
+@misc{lee2026learningvslearninghow,
+  title={Learning What vs. Learning How: Decomposing Task and Interface Competence in Agentic Training},
+  author={Chaeeun Lee and Hossein A. Rahmani and Aryo Pradipta Gema and Kexin Xu and Emine Yilmaz and Pasquale Minervini and T. Ian Simpson and Chen Jin and Amrutha Saseendran},
+  year={2026},
+  eprint={2611.31427},
+  archivePrefix={arXiv},
+  primaryClass={cs.AI},
+  url={https://arxiv.org/abs/2611.31427}
+}
 ```
-Bib entry
-```
 
+<!--
 ## Contact
 If you have any questions, do not hesitate to contact us ...
 

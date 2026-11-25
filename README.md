@@ -2,7 +2,7 @@
 <h2 align="center">Decomposing Task and Interface Competence in Agentic Training</h2>
 
 <p align="center">
-  <a href="https://arxiv.org/abs/XXXX.XXXXX"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-link_to_be_updated-b31b1b.svg"></a>
+  <a href="https://arxiv.org/abs/2611.31427"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2611.31427-b31b1b.svg"></a>
   <a href="https://huggingface.co/datasets/chaeeunlee/harness-competence"><img alt="Dataset" src="https://img.shields.io/badge/%F0%9F%A4%97_dataset-harness--competence-ffd21e.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776ab.svg">
 </p>
@@ -18,7 +18,7 @@ We decompose agentic competence into two components that can be learned, transfe
 
 To disentangle task and interface supervision, we introduce *harness rehearsal*: distillation on traces that contain little task-specific information but still require correct use of the target harness. This gives us interface supervision with little task supervision, so we can measure the effects of each alone and together.
 
-This repository contains the code, data, and results for the experiments in [the paper](https://arxiv.org/abs/XXXX.XXXXX). We study four questions:
+This repository contains the code, data, and results for the experiments in [the paper](https://arxiv.org/abs/2611.31427). We study four questions:
 
 1. **Harness dependence.** We run the same frozen model through different harnesses. The harness changes both overall performance and which tasks the model solves.
 

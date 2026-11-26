@@ -3,6 +3,7 @@
 
 <p align="center">
   <a href="https://arxiv.org/abs/2611.31427"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2611.31427-b31b1b.svg"></a>
+  <a href="https://chaeeunlee-io.github.io/harness-competence/"><img alt="Blog" src="https://img.shields.io/badge/blog-project_page-2e8fd4.svg"></a>
   <a href="https://huggingface.co/datasets/chaeeunlee/harness-competence"><img alt="Dataset" src="https://img.shields.io/badge/%F0%9F%A4%97_dataset-harness--competence-ffd21e.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776ab.svg">
 </p>

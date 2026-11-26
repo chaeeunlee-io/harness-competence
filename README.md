@@ -2,9 +2,11 @@
 <h2 align="center">Decomposing Task and Interface Competence in Agentic Training</h2>
 
 <p align="center">
-  <a href="https://arxiv.org/abs/2611.31427"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2611.31427-b31b1b.svg"></a>
-  <a href="https://huggingface.co/datasets/chaeeunlee/harness-competence"><img alt="Dataset" src="https://img.shields.io/badge/%F0%9F%A4%97_dataset-harness--competence-ffd21e.svg"></a>
-  <img alt="Python" src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776ab.svg">
+  <a href="https://arxiv.org/abs/2611.31427"><img src="https://api.iconify.design/simple-icons/arxiv.svg?color=%23b31b1b" height="18" alt=""> <b>Preprint</b></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="https://chaeeunlee-io.github.io/harness-competence/"><img src="https://api.iconify.design/lucide/globe.svg?color=%232e8fd4" height="18" alt=""> <b>Blog</b></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="https://huggingface.co/datasets/chaeeunlee/harness-competence"><img src="https://api.iconify.design/logos/hugging-face-icon.svg" height="18" alt=""> <b>Dataset</b></a>
 </p>
 
 <p align="center"><img src="docs/figures/hero.svg" width="100%" alt="Decomposing task and interface competence"></p>
